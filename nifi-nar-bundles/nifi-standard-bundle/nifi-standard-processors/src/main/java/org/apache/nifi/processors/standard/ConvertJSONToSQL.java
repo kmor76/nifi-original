@@ -298,7 +298,7 @@ public class ConvertJSONToSQL extends AbstractProcessor {
         final String schemaName = context.getProperty(SCHEMA_NAME).evaluateAttributeExpressions(flowFile).getValue();
         final String tableName = context.getProperty(TABLE_NAME).evaluateAttributeExpressions(flowFile).getValue();
         final SchemaKey schemaKey = new SchemaKey(catalog, tableName);
-        final boolean includePrimaryKeys = UPDATE_TYPE.equals(statementType) && updateKeys == null;
+        final boolean includePrimaryKeys = isUpdateStatement(statementType, flowFile.getAttribute(STATEMENT_TYPE_ATTRIBUTE)) && updateKeys == null;
 
         // Is the unmatched column behaviour fail or warning?
         final boolean failUnmappedColumns = FAIL_UNMATCHED_COLUMN.getValue().equalsIgnoreCase(context.getProperty(UNMATCHED_COLUMN_BEHAVIOR).getValue());
@@ -811,6 +811,18 @@ public class ConvertJSONToSQL extends AbstractProcessor {
 
     private static String normalizeColumnName(final String colName, final boolean translateColumnNames) {
         return translateColumnNames ? colName.toUpperCase().replace("_", "") : colName;
+    }
+
+    private boolean isUpdateStatement(String statementType, String statementTypeAttribute) {
+        if (UPDATE_TYPE.equals(statementType)) {
+            return true;
+        }
+        if (USE_ATTR_TYPE.equals(statementType)) {
+            if (UPDATE_TYPE.equals(statementTypeAttribute)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static class TableSchema {
